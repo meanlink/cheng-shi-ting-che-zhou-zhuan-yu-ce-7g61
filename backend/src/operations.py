@@ -201,7 +201,12 @@ def review_settlement(settlement_id, actor, action, note):
         status = 'accepted' if action == 'accept' else 'returned'
         conn.execute('UPDATE diversion_settlement SET status=%s,reviewed_by=%s,review_note=%s,updated_at=now() WHERE id=%s',
                      (status, actor, note, settlement_id))
-        audit(conn, actor, 'diversion_settlement', settlement_id, status, note)
+        # 延迟导入避免与 handover 模块的循环依赖。
+        from .handover import settle_claims
+        # 复盘退回收回该分流单的认领份额；通过后份额随分流单结案，继续占用交班总数。
+        settled_count = settle_claims(conn, diversion['id'], status == 'accepted', actor, note)
+        audit(conn, actor, 'diversion_settlement', settlement_id, status,
+              f'{note} · 认领份额联动 {settled_count} 笔')
         if status == 'accepted':
             conn.execute("UPDATE parking_diversion SET status='closed' WHERE id=%s", (diversion['id'],))
             audit(conn, actor, 'parking_diversion', diversion['id'], 'closed', f'复盘 #{settlement_id} 通过')

@@ -5,6 +5,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from src.analytics import rolling_backtest,seasonal_moving_average
 from src.auth import password_hash
 from src.db import connect,migrate
+from src.handover_seed import seed_handover
 from src.overflow_seed import seed_overflow
 USERS=[('analyst@metro.demo','林岚','analyst'),('operator@metro.demo','周航','operator'),('supervisor@metro.demo','顾宁','supervisor')]
 def seed():
@@ -39,5 +40,6 @@ def seed():
             VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (reference) DO NOTHING''',
             ('WL-DEMO-07',lot['id'],operations_day,operations_day,72,'B区车位划线和道闸联调','operator@metro.demo'))
         seed_overflow(conn, lot_ids['PARK-07'], lot_ids['PARK-12'])
-        conn.commit(); return {table:conn.execute(f'SELECT count(*) AS total FROM {table}').fetchone()['total'] for table in ('staff','parking_lot','interval_observation','forecast_plan','dispatch_alert','capacity_closure','parking_diversion','diversion_settlement','overflow_window','overflow_gate_batch','overflow_closeout')}
+        seed_handover(conn, lot_ids)
+        conn.commit(); return {table:conn.execute(f'SELECT count(*) AS total FROM {table}').fetchone()['total'] for table in ('staff','parking_lot','interval_observation','forecast_plan','dispatch_alert','capacity_closure','parking_diversion','diversion_settlement','overflow_window','overflow_gate_batch','overflow_closeout','handover_receipt','diversion_claim')}
 if __name__=='__main__': print(json.dumps(seed(),ensure_ascii=False,sort_keys=True))

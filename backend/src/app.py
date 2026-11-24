@@ -7,6 +7,7 @@ from . import workflow
 from .auth import authenticate, current_user, require
 from .contracts import AlertIn, ForecastIn, Login, ObservationIn, ReviewIn, Role
 from .db import connect, migrate, redis_client
+from .handover_routes import router as handover_router
 from .middlewares import quota_middleware, trace_middleware
 from .operations_routes import router as operations_router
 from .overflow_routes import router as overflow_router
@@ -27,6 +28,7 @@ async def lifespan(app):
 app=FastAPI(title='城市停车周转预测',lifespan=lifespan)
 app.include_router(operations_router)
 app.include_router(overflow_router)
+app.include_router(handover_router)
 app.middleware('http')(quota_middleware); app.middleware('http')(trace_middleware)
 
 @app.exception_handler(RequestValidationError)
